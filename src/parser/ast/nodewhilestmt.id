@@ -1,0 +1,27 @@
+use NodeExpr from . nodeexpr;
+use NodeStmt from . nodestmt;
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+
+class NodeWhileStmt : AstNode {
+
+	func NodeWhileStmt (self, predicate, body, elseBody) {
+		super ();
+		self.predicate = predicate;
+		self.body = body;
+		self.elseBody= elseBody;
+	}
+	
+	func parse (parser) {
+		parser.expect (TokenType.IDENTIFIER, "while");
+		parser.expect (TokenType.PARENTHESES, "(");
+		predicate = NodeExpr.parse (parser);
+		parser.expect (TokenType.PARENTHESES, ")");
+		body = NodeStmt.parse (parser);
+		elseBody = AstNode ();
+		if (parser.accept (TokenType.IDENTIFIER, "else")) {
+			elseBody = NodeStmt.parse (parser);
+		}
+		return NodeWhileStmt (predicate, body, elseBody);
+	}
+}

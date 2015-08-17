@@ -1,0 +1,9 @@
+use AstNode from parser.astnode;
+
+class NodeCall : AstNode {
+	func NodeCall (self, target, arguments) {
+		super ();
+		self.target = target;
+		self.arguments = arguments;
+	}
+}

@@ -1,0 +1,160 @@
+use Parser from parser.parser;
+use Tokenizer from lexer.tokenizer;
+
+use TokenType from  lexer.token;
+
+use NodeScope from parser.astnode;
+use BinaryOperation from parser.binop;
+use NodeReal from parser.ast.nodereal;
+use NodeIdent from parser.ast.nodeident;
+use NodeBinOp from parser.ast.nodebinop;
+use NodeIfStmt from parser.ast.nodeifstmt;
+use NodeString from parser.ast.nodestring;
+use NodeCall from parser.ast.nodecall;
+use NodeWhileStmt from parser.ast.nodewhilestmt;
+
+class Interpreter {
+	
+	func Interpreter (self) {
+		self.dict = HashMap ();
+		self.dict ["print"] = print;
+		self.dict ["input"] = input;
+		self.dict ["tonum"] = Float;
+	}
+	
+	func doFile (self, file) {
+		fd = open (file, "r");
+		source = fd.readAllText ();
+		fd.close ();
+		self.doString (source);
+	}
+	
+	func doString (self, source) {
+		lexer = Tokenizer (source);
+		parser = Parser (lexer.tokenize ());
+		root = parser.parse ();
+		return self._evaluateStmt (root);
+	}
+	
+	func _evaluateStmt (self, node) {
+		if (node is NodeIfStmt) {
+			if (self._evaluateExpr (node.predicate)) {
+				self._evaluateStmt (node.body);
+			} else {
+				self._evaluateStmt (node.elseBody);
+			}
+		} else if (node is NodeWhileStmt) {
+			wasEvaled = false;
+			while (self._evaluateExpr (node.predicate)) {
+				self._evaluateStmt (node.body);
+				wasEvaled = true;
+			}
+			if (!wasEvaled) {
+				self._evaluateStmt (node.elseBody);
+			}
+		} else if (node is NodeScope) {
+			last = null;
+			foreach (child in node.children) {
+				last = self._evaluateStmt (child);
+			}
+			return last;
+		} else {
+			return self._evaluateExpr (node);
+		}
+	}
+	
+	func _evaluateExpr (self, node) {
+		if (node is NodeBinOp) {
+			return self._evaluateBinOp (node);
+		} else if (node is NodeReal || node is NodeString) {
+			return node.value;
+		} else if (node is NodeIdent) {
+			return self.dict [node.value];
+		} else if (node is NodeCall) {
+			target = self._evaluateExpr (node.target);
+			args = Tuple (map (node.arguments.children, lambda (p) => {
+				return self._evaluateExpr (p);
+			}));
+			return target (*args);
+		}
+	}
+	
+	func _evaluateBinOp (self, node) {
+		return HashMap ({
+			(BinaryOperation.ASSIGN, lambda () => {
+				self.dict [node.left.value] = self._evaluateExpr (node.right)
+			}),
+			(BinaryOperation.ADD, lambda () => {
+				return self._evaluateExpr (node.left) +
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.SUB, lambda () => {
+				return self._evaluateExpr (node.left) -
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.DIV, lambda () => {
+				return self._evaluateExpr (node.left) /
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.MUL, lambda () => {
+				return self._evaluateExpr (node.left) *
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.MOD, lambda () => {
+				return Int (self._evaluateExpr (node.left)) %
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.EQUALS, lambda () => {
+				return self._evaluateExpr (node.left) ==
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.XOR, lambda () => {
+				return Int (self._evaluateExpr (node.left)) ^
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.OR, lambda () => {
+				return Int (self._evaluateExpr (node.left)) |
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.AND, lambda () => {
+				return Int (self._evaluateExpr (node.left)) &
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.RIGHT_SHIFT, lambda () => {
+				return Int (self._evaluateExpr (node.left)) >>
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.LEFT_SHIFT, lambda () => {
+				return Int (self._evaluateExpr (node.left)) <<
+					Int (self._evaluateExpr (node.right));
+			}),
+			(BinaryOperation.GREATER_THAN, lambda () => {
+				return self._evaluateExpr (node.left) >
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.LESS_THAN, lambda () => {
+				return self._evaluateExpr (node.left) <
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.GREATER_THAN_OR_EQU, lambda () => {
+				return self._evaluateExpr (node.left) >=
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.LESS_THAN_OR_EQU, lambda () => {
+				return self._evaluateExpr (node.left) <=
+					self._evaluateExpr (node.right);
+			}),
+			(BinaryOperation.NOT_EQUALS, lambda () => {
+				return self._evaluateExpr (node.left) !=
+					self._evaluateExpr (node.right);
+			})}) [node.operation] ();
+	}
+}
+
+
+func main (args) {
+	myInterpreter = Interpreter ();
+	myInterpreter.doFile (args [0]);
+	
+}
+

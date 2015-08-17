@@ -1,0 +1,9 @@
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+
+class NodeString : AstNode {
+	func NodeString (self, value) {
+		super ();
+		self.value = value;
+	}
+}

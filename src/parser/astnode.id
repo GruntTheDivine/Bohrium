@@ -1,0 +1,12 @@
+
+class AstNode {
+	func AstNode (self) {
+		self.children = List ();
+	}
+}
+
+class NodeScope : AstNode {
+	func NodeScope (self) {
+		super ();
+	}
+}

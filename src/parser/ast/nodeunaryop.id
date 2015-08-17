@@ -1,0 +1,9 @@
+use AstNode from parser.astnode;
+
+class NodeBinOp : AstNode {
+	func NodeBinOp (self, type, value) {
+		super ();
+		self.operation = type;
+		self.type = type;
+	}
+}

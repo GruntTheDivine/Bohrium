@@ -1,0 +1,5 @@
+enum UnaryOp {
+	LOGICAL_NOT,
+	BITWISE_NOT,
+	NEGATE
+}

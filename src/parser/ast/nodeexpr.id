@@ -1,0 +1,153 @@
+use NodeReal from . nodereal;
+use NodeCall from . nodecall;
+use NodeBinOp from . nodebinop;
+use NodeIdent from . nodeident;
+use NodeString from . nodestring;
+use NodeArgList from . nodearglist;
+use TokenType from lexer.token;
+use BinaryOperation from parser.binop;
+
+class NodeExpr {
+	
+	func parse (parser) {
+		return NodeExpr.parseAssignment (parser);
+	}
+
+	func parseAssignment (parser) {
+		left = NodeExpr.parseLogicalOr (parser);
+		if (parser.accept (TokenType.OPERATOR, ":=")) {
+			return NodeBinOp (BinaryOperation.ASSIGN, left, NodeExpr.parseAssignment (parser));
+		}
+		return left;
+	}
+	
+	func parseLogicalOr (parser) {
+		left = NodeExpr.parseLogicalAnd (parser);
+		if (parser.accept (TokenType.OPERATOR, "||")) {
+			return NodeBinOp (BinaryOperation.LOGICAL_OR, left, NodeExpr.parseLogicalOr (parser));
+		}
+		return left;
+	}
+	
+	func parseLogicalAnd (parser) {
+		left = NodeExpr.parseBitwiseOr (parser);
+		if (parser.accept (TokenType.OPERATOR, "&&")) {
+			return NodeBinOp (BinaryOperation.LOGICAL_AND, left, NodeExpr.parseLogicalAnd (parser));
+		}
+		return left;
+	}
+	
+	func parseBitwiseOr (parser) {
+		left = NodeExpr.parseBitwiseXor (parser);
+		if (parser.accept (TokenType.OPERATOR, "|")) {
+			return NodeBinOp (BinaryOperation.OR, left, NodeExpr.parseBitwiseOr (parser));
+		}
+		return left;
+	}
+	
+	func parseBitwiseXor (parser) {
+		left = NodeExpr.parseBitwiseAnd (parser);
+		if (parser.accept (TokenType.OPERATOR, "^")) {
+			return NodeBinOp (BinaryOperation.XOR, left, NodeExpr.parseBitwiseXor (parser));
+		}
+		return left;
+	}
+	
+	func parseBitwiseAnd (parser) {
+		left = NodeExpr.parseEquality (parser);
+		if (parser.accept (TokenType.OPERATOR, "&")) {
+			return NodeBinOp (BinaryOperation.AND, left, NodeExpr.parseBitwiseAnd (parser));
+		}
+		return left;
+	}
+	
+	func parseEquality (parser) {
+		left = NodeExpr.parseRelational (parser);
+		if (parser.accept (TokenType.OPERATOR, "=")) {
+			return NodeBinOp (BinaryOperation.EQUALS, left, NodeExpr.parseEquality (parser));
+		} else if (parser.accept (TokenType.OPERATOR, "!=")) {
+			return NodeBinOp (BinaryOperation.NOT_EQUALS, left, NodeExpr.parseEquality (parser));
+		}
+		return left;
+	}
+	
+	func parseRelational (parser) {
+		left = NodeExpr.parseShift (parser);
+		if (parser.accept (TokenType.OPERATOR, "<")) {
+			return NodeBinOp (BinaryOperation.LESS_THAN, left, NodeExpr.parseRelational (parser));
+		} else if (parser.accept (TokenType.OPERATOR, "<=")) {
+			return NodeBinOp (BinaryOperation.LESS_THAN_OR_EQU, left, NodeExpr.parseRelational (parser));
+		} else if (parser.accept (TokenType.OPERATOR, ">")) {
+			return NodeBinOp (BinaryOperation.GREATER_THAN, left, NodeExpr.parseRelational (parser));
+		} else if (parser.accept (TokenType.OPERATOR, ">=")) {
+			return NodeBinOp (BinaryOperation.GREATER_THAN_OR_EQU, left, NodeExpr.parseRelational (parser));
+		}
+		return left;
+	}
+	
+	func parseShift (parser) {
+		left = NodeExpr.parseAdditive (parser);
+		if (parser.accept (TokenType.OPERATOR, "<<")) {
+			return NodeBinOp (BinaryOperation.LEFT_SHIFT, left, NodeExpr.parseShift (parser));
+		} else if (parser.accept (TokenType.OPERATOR, ">>")) {
+			return NodeBinOp (BinaryOperation.RIGHT_SHIFT, left, NodeExpr.parseShift (parser));
+		}
+		return left;
+	}
+	
+	func parseAdditive (parser) {
+		left = NodeExpr.parseMultiplicative (parser);
+		if (parser.accept (TokenType.OPERATOR, "+")) {
+			return NodeBinOp (BinaryOperation.ADD, left, NodeExpr.parseAdditive (parser));
+		} else if (parser.accept (TokenType.OPERATOR, "-")) {
+			return NodeBinOp (BinaryOperation.SUB, left, NodeExpr.parseAdditive (parser));
+		}
+		return left;
+	}
+	
+	func parseMultiplicative (parser) {
+		left = NodeExpr.parseUnary (parser);
+	
+		if (parser.accept (TokenType.OPERATOR, "*")) {
+			return NodeBinOp (BinaryOperation.MUL, left, NodeExpr.parseMultiplicative (parser));
+		} else if (parser.accept (TokenType.OPERATOR, "/")) {
+			return NodeBinOp (BinaryOperation.DIV, left, NodeExpr.parseMultiplicative (parser));
+		} else if (parser.accept (TokenType.OPERATOR, "%")) {
+			return NodeBinOp (BinaryOperation.MOD, left, NodeExpr.parseMultiplicative (parser));
+		}
+		return left;
+	}
+	
+	func parseUnary (parser) {
+		left = NodeExpr.parseCall (parser);
+		
+		return left;
+	}
+	
+	func parseCall (parser) {
+		left = NodeExpr.parseTerm (parser);
+		func internalParseCall (parser, left) {	
+			if (parser.match (TokenType.PARENTHESES, "(")) {
+				return internalParseCall (parser, NodeCall (left, NodeArgList.parse (parser)));
+			}
+			return left;
+		}
+		return internalParseCall (parser, left);
+	}
+	
+	func parseTerm (parser) {
+		if (parser.match (TokenType.REAL_LITERAL)) {
+			return NodeReal (Int (parser.expect (TokenType.REAL_LITERAL).value));
+		} else if (parser.match (TokenType.IDENTIFIER)) {
+			return NodeIdent (parser.expect(TokenType.IDENTIFIER).value);
+		} else if (parser.match (TokenType.STRING_LITERAL)) {
+			return NodeString (parser.expect (TokenType.STRING_LITERAL).value);
+		} else if (parser.accept (TokenType.PARENTHESES, "(")) {
+			retval = NodeExpr.parse (parser);
+			parser.expect (TokenType.PARENTHESES, ")");
+			return retval;
+		} else {
+			raise Exception ("u dun fucked it up");
+		}
+	}
+}

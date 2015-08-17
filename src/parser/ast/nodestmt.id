@@ -1,0 +1,27 @@
+use NodeExpr from . nodeexpr;
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+use NodeIfStmt from . nodeifstmt;
+use NodeScope from parser.astnode;
+use NodeWhileStmt from . nodewhilestmt;
+
+class NodeStmt  {
+	
+	func parse (parser) {
+		if (parser.match (TokenType.IDENTIFIER, "if")) {
+			return NodeIfStmt.parse (parser);
+		} else if (parser.match (TokenType.IDENTIFIER, "while")) {
+			return NodeWhileStmt.parse (parser);
+		} else if (parser.accept (TokenType.BRACKET, "{")) {
+			block = NodeScope ();
+			while (!parser.accept (TokenType.BRACKET, "}")) {
+				block.children.add (NodeStmt.parse (parser));
+			}
+			return block;
+		}
+		expr = NodeExpr.parse (parser);
+		parser.expect (TokenType.SEMI_COLON);
+		return expr;
+		
+	}
+}

@@ -1,0 +1,176 @@
+use Token from . token;
+use TokenType from . token;
+
+class Tokenizer {
+	func Tokenizer (self, source) {
+		self.input = source;
+		self.position = 0;
+		self.inputSize = source.getSize ();
+	}
+	
+	func tokenize (self) {
+		tokens = List ();
+		self.eatWhitespaces ();
+		while (self.position < self.inputSize) {
+			ch = self.peekChar ();
+			lookup = HashMap ({
+				("{", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.BRACKET, "{"));
+				}),
+				("}", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.BRACKET, "}"));
+				}),
+				("(", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.PARENTHESES, "("));
+				}),
+				(")", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.PARENTHESES, ")"));
+				}),
+				(",", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.COMMA, ","));
+				}),
+				(";", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.SEMI_COLON, ";"));
+				}),
+				("=", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "="));
+				}),
+				("+", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "+"));
+				}),
+				("-", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "-"));
+				}),
+				("*", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "*"));
+				}),
+				("/", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "/"));
+				}),
+				(":", lambda () => {
+					self.readChar ();
+					if (self.peekChar () == "=") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, ":="));
+					} else {
+						raise Exception ("Unexpected #{ch}");
+					}
+				}),
+				("!", lambda () => {
+					self.readChar ();
+					if (self.peekChar () == "=") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, "!="));
+					} else {
+						tokens.add (Token (TokenType.OPERATOR, "!"));
+					}
+				}),
+				("<", lambda () => {
+					self.readChar ();
+					if (self.peekChar () == "=") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, "<="));
+					} else if (self.peekChar () == "<") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, "<<"));
+					} else {
+						tokens.add (Token (TokenType.OPERATOR, "<"));
+					}
+				}),
+				(">", lambda () => {
+					self.readChar ();
+					if (self.peekChar () == "=") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, ">="));
+					} else if (self.peekChar () == ">") {
+						self.readChar ();
+						tokens.add (Token (TokenType.OPERATOR, ">>"));
+					} else {
+						tokens.add (Token (TokenType.OPERATOR, ">"));
+					}
+				}),
+				("^", lambda () => {
+					self.readChar ();
+					tokens.add (Token (TokenType.OPERATOR, "^"));
+				}),
+				("\"", lambda () => {
+					accum = "";
+					self.readChar ();
+					ch = self.peekChar ();
+					while (ch is Char && ch != "\"") {
+						accum += Str (self.readChar ());
+						ch = self.peekChar ();
+					}
+					self.readChar ();
+					tokens.add (Token (TokenType.STRING_LITERAL, accum));
+				}),
+				("$", lambda () => {
+					self.readChar ();
+					while (self.readChar () != "$");
+				})
+			});
+			if (lookup.contains (ch)) {
+				lookup [ch] ();
+			} else if (ch is Char) {
+				if (ch.isLetter ()) {
+					accum = "";
+					while (ch is Char && ch.isLetter ()) {
+						accum += Str (self.readChar ());
+						ch = self.peekChar ();		
+					}
+					tokens.add (Token (TokenType.IDENTIFIER, accum));
+				} else if (ch.isDigit ()) {
+					accum = "";
+					while (ch is Char && (ch.isDigit () || ch == ".")) {
+						accum += Str (self.readChar ());
+						ch = self.peekChar ();
+					}
+					tokens.add (Token (TokenType.REAL_LITERAL, accum));
+				} else {
+					raise Exception ("Unexpected #{ch}");
+				}
+			}
+			self.eatWhitespaces ();
+		}
+		return tokens;
+	}
+	
+	func eatWhitespaces (self) {
+		while (self.peekChar () is Char && self.peekChar ().isWhiteSpace ()) {
+			self.readChar ();
+		}
+	}
+	
+	func readChar (self) {
+		if (self.position < self.inputSize) {
+			self.position += 1;
+			return self.input [self.position - 1];
+		}
+		return -1;
+	}
+	
+	func peekChar (self, params args) {
+		if (args.getSize () == 0) {
+			return self.peekChar_n (0);
+		}
+		return self.peekChar_n (args [0]);
+	}
+	
+	func peekChar_n (self, n) {
+		if (n + self.position < self.inputSize) {
+			return self.input [self.position + n];
+		}
+		return -1;
+	}
+}

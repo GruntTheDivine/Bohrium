@@ -1,0 +1,22 @@
+use NodeExpr from . nodeexpr;
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+
+class NodeArgList : AstNode {
+	func NodeArgList (self) {
+		super ();
+	}
+	
+	func parse (parser) {
+		parser.expect (TokenType.PARENTHESES, "(");
+		ret = NodeArgList ();
+		while (!parser.match (TokenType.PARENTHESES, ")")) {
+			ret.children.add (NodeExpr.parse (parser));
+			if (!parser.accept (TokenType.COMMA, ",")) {
+				break;
+			}
+		}
+		parser.expect (TokenType.PARENTHESES, ")");
+		return ret;
+	}
+}

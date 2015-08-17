@@ -1,0 +1,11 @@
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+
+class NodeBinOp : AstNode {
+	func NodeBinOp (self, type, left, right) {
+		super ();
+		self.operation = type;
+		self.left = left;
+		self.right = right;
+	}
+}

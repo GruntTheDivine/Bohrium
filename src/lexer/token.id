@@ -1,0 +1,18 @@
+enum TokenType {
+	IDENTIFIER,
+	BRACKET,
+	STRING_LITERAL,
+	REAL_LITERAL,
+	PARENTHESES,
+	COMMA,
+	OPERATOR,
+	SEMI_COLON
+}
+
+
+class Token {
+	func Token (self, type, value) {
+		self.type = type;
+		self.value = value;
+	}
+}

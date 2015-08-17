@@ -1,0 +1,49 @@
+use AstNode from . astnode
+use NodeStmt from . ast.nodestmt;
+use NodeExpr from . ast.nodeexpr;
+use NodeScope from parser.astnode;
+
+class Parser {
+	func Parser (self, tokens) {
+		self.tokens = tokens;
+		self.position = 0;
+		self.inputSize = tokens.getSize ();
+	}
+	
+	func parse (self) {
+		ret = NodeScope ();
+		while (self.position < self.inputSize) {
+			ret.children.add (NodeStmt.parse (self));
+		}
+		return ret;
+	}
+	
+	func match (self, params args) {
+		if (self.position < self.inputSize) {
+			if (args.getSize () >= 2) {
+				return self.tokens [self.position].type == args [0] &&
+					self.tokens [self.position].value == args [1];
+			} else if (args.getSize () == 1) {
+				return self.tokens [self.position].type == args [0];
+			}
+		}
+		return false;
+	}
+	
+	func accept (self, params args) {
+		if (self.match (*args)) {
+			self.position += 1;
+			return true;
+		}
+		return false;
+	}
+	
+	func expect (self, params args) {
+		token = self.tokens [self.position];
+		if (!self.match (*args)) {
+			raise Exception ("Unexpected " + token.value);
+		}
+		self.position += 1;
+		return token;
+	}
+}
