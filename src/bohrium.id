@@ -22,6 +22,9 @@ class Interpreter {
 		self.dict ["free"] = lambda (var) => {
 			self.dict.remove (var);
 		};
+		self.dict ["eval"] = lambda (expr) => {
+			return self.doString (expr);
+		};
 	}
 	
 	func loadLibrary (self, path) {
