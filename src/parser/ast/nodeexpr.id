@@ -4,8 +4,10 @@ use NodeBinOp from . nodebinop;
 use NodeIdent from . nodeident;
 use NodeString from . nodestring;
 use NodeArgList from . nodearglist;
+use NodeUnaryOp from . nodeunaryop;
 use TokenType from lexer.token;
 use BinaryOperation from parser.binop;
+use UnaryOperation from parser.unaryop;
 
 class NodeExpr {
 	
@@ -119,9 +121,10 @@ class NodeExpr {
 	}
 	
 	func parseUnary (parser) {
-		left = NodeExpr.parseCall (parser);
-		
-		return left;
+		if (parser.accept (TokenType.OPERATOR, "!")) {
+			return NodeUnaryOp (UnaryOperation.LOGICAL_NOT, NodeExpr.parseUnary (parser));
+		}
+		return NodeExpr.parseCall (parser);
 	}
 	
 	func parseCall (parser) {

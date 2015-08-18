@@ -1,4 +1,4 @@
-enum UnaryOp {
+enum UnaryOperation {
 	LOGICAL_NOT,
 	BITWISE_NOT,
 	NEGATE

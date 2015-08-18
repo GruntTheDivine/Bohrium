@@ -1,25 +1,35 @@
+use io;
+use reflection;
 use Parser from parser.parser;
-use Tokenizer from lexer.tokenizer;
-
 use TokenType from  lexer.token;
-
+use Tokenizer from lexer.tokenizer;
 use NodeScope from parser.astnode;
 use BinaryOperation from parser.binop;
+use UnaryOperation from parser.unaryop;
 use NodeReal from parser.ast.nodereal;
 use NodeIdent from parser.ast.nodeident;
 use NodeBinOp from parser.ast.nodebinop;
 use NodeIfStmt from parser.ast.nodeifstmt;
 use NodeString from parser.ast.nodestring;
 use NodeCall from parser.ast.nodecall;
+use NodeUnaryOp from parser.ast.nodeunaryop;
 use NodeWhileStmt from parser.ast.nodewhilestmt;
 
 class Interpreter {
 	
 	func Interpreter (self) {
 		self.dict = HashMap ();
-		self.dict ["print"] = print;
-		self.dict ["input"] = input;
-		self.dict ["tonum"] = Float;
+		self.dict ["free"] = lambda (var) => {
+			self.dict.remove (var);
+		};
+	}
+	
+	func loadLibrary (self, path) {
+		module = reflection.loadModule (path);
+		attributes = reflection.getAttributes (module);
+		foreach (attr in attributes) {
+			self.dict [attr] = attributes [attr];
+		}
 	}
 	
 	func doFile (self, file) {
@@ -66,6 +76,8 @@ class Interpreter {
 	func _evaluateExpr (self, node) {
 		if (node is NodeBinOp) {
 			return self._evaluateBinOp (node);
+		} else if (node is NodeUnaryOp) {
+			return self._evaluateUnaryOp (node);
 		} else if (node is NodeReal || node is NodeString) {
 			return node.value;
 		} else if (node is NodeIdent) {
@@ -77,6 +89,16 @@ class Interpreter {
 			}));
 			return target (*args);
 		}
+	}
+	
+	func _evaluateUnaryOp (self, node) {
+		return HashMap ({
+			(UnaryOperation.LOGICAL_NOT, lambda () => {
+				return !self._evaluateExpr (node.value);
+			}),
+			(UnaryOperation.NEGATE, lambda () => {
+				return -self._evaluateExpr (node.value);
+			})}) [node.operation] ();
 	}
 	
 	func _evaluateBinOp (self, node) {
@@ -154,7 +176,31 @@ class Interpreter {
 
 func main (args) {
 	myInterpreter = Interpreter ();
-	myInterpreter.doFile (args [0]);
+	
+	func loadLibraries () {
+		foreach (file in io.Directory.getFiles ("lib")) {
+			myInterpreter.loadLibrary (file);
+		}
+	}
+	
+	func interactiveInterpreter () {
+		while (true) {
+			try {
+				src = input (">>> ");
+				print (myInterpreter.doString (src));
+			} except (e) {
+				print (e);
+			}
+		}
+	}
+	loadLibraries ();
+	if (args.getSize () == 0) {
+		interactiveInterpreter ();
+	} else {
+		myInterpreter.doFile (args [0]);
+	}
 	
 }
+
+
 

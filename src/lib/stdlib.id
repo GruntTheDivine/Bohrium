@@ -1,0 +1,110 @@
+use io;
+use sys;
+use math;
+use WebClient from webclient;
+
+func print (params args) {
+	stdout.write ("".join (args));
+}
+
+func input (params args) {
+	return input (*args);
+}
+
+func exit (code) {
+	return sys.exit (Int (code));
+}
+
+func type (obj) {
+	return obj.typeDef.name;
+}
+
+func pow (a, b) {
+	return math.pow (a, b);
+}
+
+func sqrt (n) {
+	return math.sqrt (n);
+}
+
+func tonum (num) {
+	return Float (num);
+}
+
+func tostr (str){
+	return Str (str);
+}
+
+func tobyte (byte) {
+	return Int (byte) & 255;
+}
+
+func strlen (arg) {
+	return arg.getSize ();
+}
+
+func sstr (str, start, len) {
+	return str.substr (start, len);
+}
+
+func strcat (params args) {
+	return "".join (args);
+}
+
+func begins (str, with) {
+	return str.startsWith (with);
+}
+
+func toupper (str) {
+	return str.toUpper ();
+}
+
+func tolower (str) {
+	return str.toLower ();
+}
+
+func puts (file, data) {
+	fd = open (file, "w");
+	fd.write (data);
+	fd.close ();
+}
+
+func mdir (dir) {
+	io.Directory.create (dir);
+}
+
+func ddir (dir) {
+	io.Directory.removeTree (dir);
+}
+
+func dfile (file) {
+	io.File.remove (file);
+}
+
+func fexists (path) {
+	return io.File.exists (path);
+}
+
+func dexists (path) {
+	return io.Directory.exists (path);
+}
+
+func dowfile (url, path) {
+	client = WebClient ();
+	client.downloadFile (url, path);
+}
+
+func dowstr (url) {
+	client = WebClient ();
+	return client.downloadString (url);
+}
+
+func dowfile (url, file) {
+	client = WebClient ();
+	client.downloadFile (url, file);
+}
+
+func upfile (url, file) {
+	client = WebClient ();
+	client.uploadFile (url, file);
+}
