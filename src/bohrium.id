@@ -10,6 +10,7 @@ use NodeReal from parser.ast.nodereal;
 use NodeIdent from parser.ast.nodeident;
 use NodeBinOp from parser.ast.nodebinop;
 use NodeIfStmt from parser.ast.nodeifstmt;
+use NodeForStmt from parser.ast.nodeforstmt;
 use NodeString from parser.ast.nodestring;
 use NodeCall from parser.ast.nodecall;
 use NodeUnaryOp from parser.ast.nodeunaryop;
@@ -64,6 +65,12 @@ class Interpreter {
 			}
 			if (!wasEvaled) {
 				self._evaluateStmt (node.elseBody);
+			}
+		} else if (node is NodeForStmt) {
+			for (self._evaluateExpr (node.initializer);
+				self._evaluateExpr (node.condition);
+				self._evaluateExpr (node.afterThought)) {
+				self._evaluateStmt (node.body);
 			}
 		} else if (node is NodeScope) {
 			last = null;

@@ -1,0 +1,28 @@
+use NodeExpr from . nodeexpr;
+use NodeStmt from . nodestmt;
+use TokenType from lexer.token;
+use AstNode from parser.astnode;
+
+class NodeForStmt : AstNode {
+
+	func NodeForStmt (self, initializer, condition, afterThought, body) {
+		super ();
+		self.initializer = initializer;
+		self.condition = condition;
+		self.afterThought = afterThought;
+		self.body = body;
+	}
+	
+	func parse (parser) {
+		parser.expect (TokenType.IDENTIFIER, "for");
+		parser.expect (TokenType.PARENTHESES, "(");
+		initializer = NodeExpr.parse (parser);
+		parser.expect (TokenType.SEMI_COLON);
+		condition = NodeExpr.parse (parser);
+		parser.expect (TokenType.SEMI_COLON);
+		afterThought = NodeExpr.parse (parser);
+		parser.expect (TokenType.PARENTHESES, ")");
+		body = NodeStmt.parse (parser);
+		return NodeForStmt (initializer, condition, afterThought, body);
+	}
+}

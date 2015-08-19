@@ -2,6 +2,7 @@ use NodeExpr from . nodeexpr;
 use TokenType from lexer.token;
 use AstNode from parser.astnode;
 use NodeIfStmt from . nodeifstmt;
+use NodeForStmt from . nodeforstmt;
 use NodeScope from parser.astnode;
 use NodeWhileStmt from . nodewhilestmt;
 
@@ -12,6 +13,8 @@ class NodeStmt  {
 			return NodeIfStmt.parse (parser);
 		} else if (parser.match (TokenType.IDENTIFIER, "while")) {
 			return NodeWhileStmt.parse (parser);
+		} else if (parser.match (TokenType.IDENTIFIER, "for")) {
+			return NodeForStmt.parse (parser);
 		} else if (parser.accept (TokenType.BRACKET, "{")) {
 			block = NodeScope ();
 			while (!parser.accept (TokenType.BRACKET, "}")) {
